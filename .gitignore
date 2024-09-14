@@ -3,3 +3,4 @@
 *.stl
 output/
 __pycache__/
+.env

@@ -95,7 +95,7 @@ export default function Home() {
     // } finally {
     //   setIsLoading(false);
     // }
-  
+
     setIsLoading(true);
     setError(null);
   
@@ -156,9 +156,60 @@ export default function Home() {
     }
   };
 
-  const handleSendTo3DPrinter = () => {
-    setShowConfetti(true);
-    setShowDialog(true);
+  const handleSendTo3DPrinter = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Health check
+      const healthCheckController = new AbortController();
+      const healthCheckTimeout = setTimeout(() => healthCheckController.abort(), 2000);
+  
+      try {
+        const healthResponse = await fetch('http://localhost:8004/health', {
+          signal: healthCheckController.signal
+        });
+        clearTimeout(healthCheckTimeout);
+  
+        if (!healthResponse.ok) {
+          throw new Error(`Health check failed with status: ${healthResponse.status}`);
+        }
+        await healthResponse.json();
+      } catch (healthError) {
+        if (healthError instanceof Error && healthError.name === 'AbortError') {
+          throw new Error("Health check timed out after 2 seconds");
+        }
+        throw new Error("Health check failed. Server might be unavailable.");
+      }
+
+      // Extract the filename from the processedSTL URL
+      const stlFilename = processedSTL ? processedSTL.split('/').pop() : null;
+
+      // Proceed with MASV upload
+      const formData = new FormData();
+      if (stlFilename) {
+        formData.append('file_name', stlFilename);
+      }
+
+      const response = await fetch('http://localhost:8004/upload_to_masv', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload to MASV. Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('MASV upload successful. Package ID:', data.masv_package_id);
+      
+      setShowConfetti(true);
+      setShowDialog(true);
+    } catch (err) {
+      console.error("Error:", err);
+      setError(err instanceof Error ? err.message : "Failed to send to 3D printer. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCloseDialog = () => {
@@ -409,11 +460,22 @@ export default function Home() {
               <div className="flex justify-center mt-4">
                 <Button 
                   onClick={handleSendTo3DPrinter}
+                  disabled={isLoading}
                   className="py-3 px-6 bg-[#80e0b8] hover:bg-[#60c098] text-white font-semibold rounded-lg transition-colors duration-300"
                 >
-                  Send to 3D Printer!
+                  {isLoading ? (
+                    <>
+                      <Loader className="mr-2 h-5 w-5 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send to 3D Printer!'
+                  )}
                 </Button>
               </div>
+              {error && (
+                <p className="text-[#f070b8] text-center font-medium mt-4">{error}</p>
+              )}
             </CardContent>
           </Card>
         )}

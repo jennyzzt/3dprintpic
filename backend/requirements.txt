@@ -6,3 +6,5 @@ plotly
 fastapi
 uvicorn
 python-multipart
+aiohttp
+dotenv
