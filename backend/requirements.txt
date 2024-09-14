@@ -1,0 +1,8 @@
+tqdm
+numpy-stl
+gradio_client
+scipy
+plotly
+fastapi
+uvicorn
+python-multipart
