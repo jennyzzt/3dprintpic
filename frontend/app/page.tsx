@@ -17,13 +17,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StlViewer } from "react-stl-viewer";
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
-const exampleImages = [
-  { src: '/api/placeholder/400/300', alt: 'Example 1' },
-  { src: '/api/placeholder/400/300', alt: 'Example 2' },
-  { src: '/api/placeholder/400/300', alt: 'Example 3' },
-  { src: '/api/placeholder/400/300', alt: 'Example 4' },
-  { src: '/api/placeholder/400/300', alt: 'Example 5' },
+const examplePairs = [
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example0_og.jpg', alt: 'Original 1' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example0_print.jpg', alt: '3D Print 1' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example1_og.webp', alt: 'Original 2' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example1_print.jpg', alt: '3D Print 2' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example2_og.jpg', alt: 'Original 3' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example2_print.jpg', alt: '3D Print 3' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example3_og.jpg', alt: 'Original 4' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example3_print.jpg', alt: '3D Print 4' },
+  },
 ];
 
 export default function Home() {
@@ -38,6 +51,38 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageToProcess, setImageToProcess] = useState<string | null>(null);
+  const router = useRouter();
+
+  const ExampleCard = ({ pair, index }: { pair: any, index: any }) => {
+    return (
+      <Card className="w-full shadow-lg bg-white overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <CardContent className="p-4">
+          <div className="flex flex-col space-y-4">
+            <div className="relative group">
+              <img
+                src={pair.print.src}
+                alt={pair.print.alt}
+                className="w-full h-48 object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="absolute top-2 left-2 bg-[#c0a8f8] text-white px-3 py-1 rounded-full text-sm font-semibold shadow-md">
+                3D Print
+              </span>
+            </div>
+            <div className="relative group">
+              <img
+                src={pair.original.src}
+                alt={pair.original.alt}
+                className="w-full h-48 object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="absolute top-2 left-2 bg-[#80e0b8] text-white px-3 py-1 rounded-full text-sm font-semibold shadow-md">
+                Original
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
@@ -262,6 +307,11 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  const handleEditModel = () => {
+    router.push('/edit');
+  };
+
   useEffect(() => {
     if (uploadedImage) {
       setImageToProcess(uploadedImage);
@@ -284,8 +334,48 @@ export default function Home() {
           />
         )}
         
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center text-[#6880d0] font-serif">3D Print a Picture</h1>
-        <p className="text-lg md:text-xl mb-12 text-center text-gray-600 font-light">Take a picture, get a 3D print of it!</p>
+        <motion.h1 
+          className="text-4xl md:text-6xl font-bold mb-6 text-center text-[#6880d0] font-serif relative overflow-hidden"
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.span
+            className="inline-block"
+            variants={{
+              hidden: { x: -100, opacity: 0 },
+              visible: { x: 0, opacity: 1 }
+            }}
+            transition={{ duration: 0.5 }}
+          >
+            3D Print
+          </motion.span>{' '}
+          <motion.span
+            className="inline-block"
+            variants={{
+              hidden: { x: 100, opacity: 0 },
+              visible: { x: 0, opacity: 1 }
+            }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            a Picture
+          </motion.span>
+          <motion.span 
+            className="absolute bottom-0 left-0 w-full h-1 bg-[#6880d0]"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+            style={{ originX: 0 }}
+          />
+        </motion.h1>
+        
+        <motion.p 
+          className="text-lg md:text-xl mb-12 text-center text-gray-600 font-light"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+        >
+          Take a picture, get a 3D print of it!
+        </motion.p>
         
         <Card className="w-full max-w-3xl mb-16 shadow-lg bg-white">
           <CardContent className="p-6">
@@ -447,7 +537,13 @@ export default function Home() {
                   <Download className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-4 space-x-4">
+                <Button 
+                  onClick={handleEditModel}
+                  className="py-3 px-6 bg-[#c0a8f8] hover:bg-[#a088d8] text-white font-semibold rounded-lg transition-colors duration-300"
+                >
+                  Edit 3D Model
+                </Button>
                 <Button 
                   onClick={handleSendTo3DPrinter}
                   disabled={isLoading}
@@ -470,18 +566,10 @@ export default function Home() {
           </Card>
         )}
 
-        <h2 className="text-3xl md:text-4xl font-bold mb-10 text-center w-full text-[#6880d0] font-serif">Example 3D Prints</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full">
-          {exampleImages.map((image, index) => (
-            <Card key={index} className="w-full transform hover:scale-105 transition-transform duration-300 shadow-lg bg-white">
-              <CardContent className="p-3">
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  className="w-full h-auto rounded-lg"
-                />
-              </CardContent>
-            </Card>
+        <h2 className="text-3xl md:text-4xl font-bold mb-10 text-center w-full text-[#f070b8] font-serif">Examples</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+          {examplePairs.map((pair, index) => (
+            <ExampleCard key={index} pair={pair} index={index} />
           ))}
         </div>
 

@@ -1,10 +1,9 @@
-// app/api/groq/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are a depth data modifier. Your task is to interpret the user's input and provide modifications to a 100x100 grid of depth values. The depth values range from 0 to 100, where 0 is the deepest and 100 is the shallowest.
+const systemPrompt = `You are a depth data modifier. Your task is to interpret the user's input and provide modifications to a grid of depth values. The depth values range from 0 to 100, where 0 is the deepest and 100 is the shallowest.
 
 Output format: Respond with a JSON object that describes how to modify the depth data. Your response should include one or more of the following properties:
 
@@ -36,23 +35,9 @@ Example output:
 
 Interpret the user's input creatively, but ensure your output is valid JSON and follows this structure.`;
 
-function generateBaseData(size: number): number[][] {
-  return Array.from({ length: size }, (_, i) =>
-    Array.from({ length: size }, (_, j) => {
-      const centerX = (size - 1) / 2;
-      const centerY = (size - 1) / 2;
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2)
-      );
-      const normalizedDistance = distanceFromCenter / (Math.sqrt(2) * centerX);
-      return Math.round((1 - normalizedDistance) * 100);
-    })
-  );
-}
-
-function applyModifications(baseData: number[][], modifications: any): number[][] {
-  const size = baseData.length;
-  const modifiedData = baseData.map(row => [...row]);
+function applyModifications(currentData: number[][], modifications: any): number[][] {
+  const size = currentData.length;
+  const modifiedData = currentData.map(row => [...row]);
 
   // Apply global change
   if (typeof modifications.globalChange === 'number') {
@@ -98,52 +83,52 @@ function applyModifications(baseData: number[][], modifications: any): number[][
 }
 
 function extractJSONFromString(str: string): any {
-    const jsonRegex = /{[\s\S]*}/;
-    const match = str.match(jsonRegex);
-    if (match) {
-      try {
-        return JSON.parse(match[0]);
-      } catch (error) {
-        console.error('Error parsing extracted JSON:', error);
-      }
-    }
-    return null;
-  }
-  
-  export async function POST(request: NextRequest) {
+  const jsonRegex = /{[\s\S]*}/;
+  const match = str.match(jsonRegex);
+  if (match) {
     try {
-      const { input } = await request.json();
-      console.log('Received input:', input);
-  
-      if (!process.env.GROQ_API_KEY) {
-        throw new Error('GROQ_API_KEY is not set in environment variables');
-      }
-  
-      const chatCompletion = await groq.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: input },
-        ],
-        model: "llama3-8b-8192",
-      });
-  
-      console.log('Groq API response:', chatCompletion);
-  
-      const output = chatCompletion.choices[0]?.message?.content || "{}";
-      console.log('Raw output:', output);
-      
-      let modifications = extractJSONFromString(output);
-      if (!modifications) {
-        console.warn('Failed to parse LLM output as JSON. Using empty modifications.');
-        modifications = {};
-      }
-  
-      const baseData = generateBaseData(100);
-      const modifiedData = applyModifications(baseData, modifications);
-  
-      return NextResponse.json({ output: modifiedData, appliedModifications: modifications });
+      return JSON.parse(match[0]);
     } catch (error) {
-      console.error('Detailed error:', error);
-      return NextResponse.json({ error: `An error occurred while processing your request: ${(error as Error).message}` }, { status: 500 });
+      console.error('Error parsing extracted JSON:', error);
     }
   }
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { input, currentData } = await request.json();
+    console.log('Received input:', input);
+    console.log('Received current data:', currentData);
+
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is not set in environment variables');
+    }
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: input },
+      ],
+      model: "llama3-70b-8192",
+    });
+
+    console.log('Groq API response:', chatCompletion);
+
+    const output = chatCompletion.choices[0]?.message?.content || "{}";
+    console.log('Raw output:', output);
+    
+    let modifications = extractJSONFromString(output);
+    if (!modifications) {
+      console.warn('Failed to parse LLM output as JSON. Using empty modifications.');
+      modifications = {};
+    }
+
+    const modifiedData = applyModifications(currentData, modifications);
+
+    return NextResponse.json({ output: modifiedData, appliedModifications: modifications });
+  } catch (error) {
+    console.error('Detailed error:', error);
+    return NextResponse.json({ error: `An error occurred while processing your request: ${(error as Error).message}` }, { status: 500 });
+  }
+}

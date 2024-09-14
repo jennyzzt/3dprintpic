@@ -6,12 +6,14 @@ import re
 import math
 from datetime import datetime
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import logging
 from tempfile import NamedTemporaryFile
 from pic_to_3d import process_image_get_depth_data, depth_data_to_3d_model
+import numpy as np
+from PIL import Image
 
 # Load environment variables
 load_dotenv()
@@ -225,6 +227,51 @@ async def get_stl_model(filename: str):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="STL model file not found")
     return FileResponse(file_path)
+
+def sanitize_float(x):
+    if np.isnan(x) or np.isinf(x):
+        return -12345678  # or another appropriate default value
+    return float(x)
+
+@app.get("/depth_data_downsampled/{filename}")
+async def get_depth_data_downsampled(filename: str):
+    file_path = os.path.join(os.getcwd(), f"./output/{filename}")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Depth data file not found")
+    
+    try:
+        # Load the depth data
+        depth_data = np.load(file_path)
+        
+        # Get original dimensions
+        original_height, original_width = depth_data.shape
+        
+        # Calculate the scaling factor
+        max_dimension = max(original_height, original_width)
+        scale_factor = max(1, int(max_dimension / 100))
+        
+        # Downsample the depth data by skipping pixels
+        downsampled_data = depth_data[::scale_factor, ::scale_factor]
+        
+        # Get new dimensions
+        new_height, new_width = downsampled_data.shape
+        
+        # Sanitize and convert to list for JSON serialization
+        downsampled_list = [[sanitize_float(x) for x in row] for row in downsampled_data]
+        
+        return JSONResponse(content={
+            "depth_data": downsampled_list,
+            "original_dimensions": {
+                "height": original_height,
+                "width": original_width
+            },
+            "downsampled_dimensions": {
+                "height": new_height,
+                "width": new_width
+            }
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing depth data: {str(e)}")
 
 @app.get("/health")
 async def health():
