@@ -3,8 +3,12 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
-const DepthDataPlot: React.FC = () => {
-  const [data, setData] = useState<number[][]>([]);
+interface DepthDataPlotProps {
+  initialData: number[][];
+}
+
+const DepthDataPlot: React.FC<DepthDataPlotProps> = ({ initialData }) => {
+  const [data, setData] = useState<number[][]>(initialData);
   const [incrementValue, setIncrementValue] = useState<number>(0);
   const [spread, setSpread] = useState<number>(1);
   const gridSize = 100;
@@ -13,7 +17,10 @@ const DepthDataPlot: React.FC = () => {
   const cellSize = fixedGridWidth / gridSize; // Calculate cell size
 
   useEffect(() => {
-    const fetchData = () => {
+    if (initialData.length === gridSize && initialData[0].length === gridSize) {
+      setData(initialData);
+    } else {
+      // Fallback to dummy data if initialData is not in the correct format
       const dummyData: number[][] = Array.from({ length: gridSize }, (_, i) =>
         Array.from({ length: gridSize }, (_, j) => {
           const centerX = (gridSize - 1) / 2;
@@ -26,9 +33,8 @@ const DepthDataPlot: React.FC = () => {
         })
       );
       setData(dummyData);
-    };
-    fetchData();
-  }, []);
+    }
+  }, [initialData]);
 
   const getColor = (depth: number): string => {
     const hue = (1 - depth / 100) * 240;
