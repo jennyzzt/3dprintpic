@@ -37,6 +37,7 @@ export default function Home() {
   const [generatePrompt, setGeneratePrompt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageToProcess, setImageToProcess] = useState<string | null>(null);
 
   const handleImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
@@ -80,21 +81,9 @@ export default function Home() {
   };
 
   const handleGet3DPrint = async () => {
-    if (!uploadedImage) {
+    if (!imageToProcess) {
       return;
     }
-
-    // // Mock processing
-    // setIsLoading(true);
-    // setError(null);
-    // try {
-    //   await new Promise((resolve) => setTimeout(resolve, 1000));
-    //   setProcessedSTL('/output_3d_model.stl');
-    // } catch (err) {
-    //   setError('Failed to process image. Please try again.');
-    // } finally {
-    //   setIsLoading(false);
-    // }
 
     setIsLoading(true);
     setError(null);
@@ -122,7 +111,7 @@ export default function Home() {
       }
   
       const formData = new FormData();
-      const blob = await fetch(uploadedImage).then(r => r.blob());
+      const blob = await fetch(imageToProcess).then(r => r.blob());
       formData.append('file', blob, 'image.jpg');
   
       // Main request with 5-second timeout
@@ -274,13 +263,14 @@ export default function Home() {
     }
   };
   useEffect(() => {
-    if (showConfetti) {
-      const timer = setTimeout(() => setShowConfetti(false), 10000);
-      return () => clearTimeout(timer);
+    if (uploadedImage) {
+      setImageToProcess(uploadedImage);
+    } else if (generatedImage) {
+      setImageToProcess(generatedImage);
+    } else {
+      setImageToProcess(null);
     }
-  }, [showConfetti]);
-
-  const currentImage = activeTab === 'upload' ? uploadedImage : generatedImage;
+  }, [uploadedImage, generatedImage]);
 
   return (
     <div className="min-h-screen w-full bg-[#f0f0e8] text-gray-800 font-sans">
@@ -414,7 +404,7 @@ export default function Home() {
           </CardContent>
         </Card>
         
-        {currentImage && !processedSTL && (
+        {imageToProcess && !processedSTL && (
           <Button 
             onClick={handleGet3DPrint} 
             disabled={isLoading}
