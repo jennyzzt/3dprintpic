@@ -5,7 +5,7 @@ import asyncio
 import re
 import math
 from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
@@ -36,6 +36,8 @@ app.add_middleware(
 # Get API key and team ID from environment variables
 MASV_API_KEY = os.getenv("MASV_API_KEY")
 MASV_TEAM_ID = os.getenv("MASV_TEAM_ID")
+RBC_ACCESS_TOKEN = os.getenv("RBC_ACCESS_TOKEN")
+RBC_API_BASE_URL = "https://paywithpretendpointsapi.onrender.com/api/v1"
 
 @app.post("/process_image")
 async def process_image(file: UploadFile = File(...)):
@@ -272,6 +274,55 @@ async def get_depth_data_downsampled(filename: str):
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing depth data: {str(e)}")
+
+async def get_rbc_session():
+    return aiohttp.ClientSession(headers={"Authorization": f"Bearer {RBC_ACCESS_TOKEN}"})
+
+async def create_transaction(session, member_id, points):
+    transaction_data = {
+        "partnerRefId": f"AWARD-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+        "amount": points,
+        "note": "Points awarded",
+        "type": "PAYMENT"
+    }
+    try:
+        async with session.post(f"{RBC_API_BASE_URL}/loyalty/{member_id}/transactions", json=transaction_data) as response:
+            response_text = await response.text()
+            logger.info(f"RBC API Response: Status {response.status}, Body: {response_text}")
+            if response.status != 200:
+                error_detail = f"Error creating transaction. Status: {response.status}, Response: {response_text}"
+                logger.error(error_detail)
+                raise HTTPException(status_code=response.status, detail=error_detail)
+            return await response.json()
+    except aiohttp.ClientError as e:
+        logger.error(f"Network error when calling RBC API: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Network error when calling RBC API: {str(e)}")
+
+@app.post("/award_rbc_points")
+async def award_rbc_points(
+    member_id: int = Query(..., description="The ID of the member to award points to"),
+    points: int = Query(..., description="The number of points to award")
+):
+    logger.info(f"Awarding {points} points to member {member_id}")
+    
+    async with await get_rbc_session() as session:
+        try:
+            # Create a transaction record (which also awards the points)
+            transaction = await create_transaction(session, member_id, points)
+            
+            return {
+                "status": "success",
+                "message": f"Awarded {points} points to member {member_id}",
+                "member_id": member_id,
+                "points_awarded": points,
+                "transaction": transaction["transaction"]
+            }
+        except HTTPException as e:
+            logger.error(f"Error awarding points: {e.detail}")
+            raise e
+        except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 @app.get("/health")
 async def health():

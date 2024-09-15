@@ -214,10 +214,10 @@ export default function Home() {
         }
         throw new Error("Health check failed. Server might be unavailable.");
       }
-
+  
       // Extract the filename from the processedSTL URL
       const stlFilename = processedSTL ? processedSTL.split('/').pop() : null;
-
+  
       // Proceed with MASV upload
       const formData = new FormData();
       if (stlFilename) {
@@ -235,12 +235,24 @@ export default function Home() {
 
       const data = await response.json();
       console.log('MASV upload successful. Package ID:', data.masv_package_id);
-      
+
+      // Award RBC points
+      const rbcResponse = await fetch('http://localhost:8004/award_rbc_points?member_id=42&points=10', {
+        method: 'POST',
+      });
+
+      if (!rbcResponse.ok) {
+        throw new Error(`Failed to award RBC points. Server responded with status: ${rbcResponse.status}`);
+      }
+
+      const rbcData = await rbcResponse.json();
+      console.log('RBC points awarded:', rbcData);
+
       setShowConfetti(true);
       setShowDialog(true);
     } catch (err) {
       console.error("Error:", err);
-      setError(err instanceof Error ? err.message : "Failed to send to 3D printer. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to send to 3D printer or award points. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -321,6 +333,16 @@ export default function Home() {
       setImageToProcess(null);
     }
   }, [uploadedImage, generatedImage]);
+
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 10000); // Hide confetti after 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
 
   return (
     <div className="min-h-screen w-full bg-[#f0f0e8] text-gray-800 font-sans">
@@ -578,7 +600,7 @@ export default function Home() {
             <AlertDialogHeader>
               <AlertDialogTitle className="text-2xl font-bold text-[#80e0b8] mb-4 font-serif">3D Print Sent Successfully!</AlertDialogTitle>
               <AlertDialogDescription className="text-gray-600 font-light">
-                Your 3D print has been sent to the printer. Would you like to submit another picture?
+                Your 3D print has been sent to the printer. RBC points rewarded. Would you like to submit another picture?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-6">
@@ -586,7 +608,7 @@ export default function Home() {
                 onClick={handleSubmitAnother}
                 className="bg-[#c0a8f8] hover:bg-[#a088d8] text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300"
               >
-                Let's go again!!!
+                Let&apos;s go again!!!
               </AlertDialogAction>
               <AlertDialogCancel 
                 onClick={handleCloseDialog}
