@@ -26,12 +26,20 @@ const examplePairs = [
     print: { src: 'https://3dprintpic.jennyzhangzt.com/example0_print.jpg', alt: '3D Print 1' },
   },
   {
-    original: { src: 'https://3dprintpic.jennyzhangzt.com/example1_og.webp', alt: 'Original 2' },
-    print: { src: 'https://3dprintpic.jennyzhangzt.com/example1_print.jpg', alt: '3D Print 2' },
-  },
-  {
     original: { src: 'https://3dprintpic.jennyzhangzt.com/example2_og.jpg', alt: 'Original 3' },
     print: { src: 'https://3dprintpic.jennyzhangzt.com/example2_print.jpg', alt: '3D Print 3' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example4_og.jpg', alt: 'Original 5' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example4_print.jpg', alt: '3D Print 5' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example5_og.png', alt: 'Original 6' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example5_print.jpg', alt: '3D Print 6' },
+  },
+  {
+    original: { src: 'https://3dprintpic.jennyzhangzt.com/example1_og.webp', alt: 'Original 2' },
+    print: { src: 'https://3dprintpic.jennyzhangzt.com/example1_print.jpg', alt: '3D Print 2' },
   },
   {
     original: { src: 'https://3dprintpic.jennyzhangzt.com/example3_og.jpg', alt: 'Original 4' },
