@@ -9,7 +9,7 @@ interface DepthDataPlotProps {
 
 const DepthDataPlot: React.FC<DepthDataPlotProps> = ({ initialData }) => {
   const [data, setData] = useState<number[][]>([]);
-  const [incrementValue, setIncrementValue] = useState<number>(5);
+  const [incrementValue, setIncrementValue] = useState<number>(0.1);
   const [spread, setSpread] = useState<number>(5);
   const [gridRows, setGridRows] = useState<number>(100);
   const [gridCols, setGridCols] = useState<number>(100);
@@ -69,7 +69,7 @@ const DepthDataPlot: React.FC<DepthDataPlotProps> = ({ initialData }) => {
         const distance = Math.sqrt(Math.pow(rowIndex - i, 2) + Math.pow(colIndex - j, 2));
         if (distance <= spread) {
           const factor = 1 - (distance / spread);
-          return depth + incrementValue * factor;
+          return depth - incrementValue * factor;
         }
         return depth;
       })
