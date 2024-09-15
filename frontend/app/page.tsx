@@ -202,60 +202,61 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     try {
-      // Health check
-      const healthCheckController = new AbortController();
-      const healthCheckTimeout = setTimeout(() => healthCheckController.abort(), 2000);
+      // // Health check
+      // const healthCheckController = new AbortController();
+      // const healthCheckTimeout = setTimeout(() => healthCheckController.abort(), 2000);
   
-      try {
-        const healthResponse = await fetch('http://localhost:8004/health', {
-          signal: healthCheckController.signal
-        });
-        clearTimeout(healthCheckTimeout);
+      // try {
+      //   const healthResponse = await fetch('http://localhost:8004/health', {
+      //     signal: healthCheckController.signal
+      //   });
+      //   clearTimeout(healthCheckTimeout);
   
-        if (!healthResponse.ok) {
-          throw new Error(`Health check failed with status: ${healthResponse.status}`);
-        }
-        await healthResponse.json();
-      } catch (healthError) {
-        if (healthError instanceof Error && healthError.name === 'AbortError') {
-          throw new Error("Health check timed out after 2 seconds");
-        }
-        throw new Error("Health check failed. Server might be unavailable.");
-      }
+      //   if (!healthResponse.ok) {
+      //     throw new Error(`Health check failed with status: ${healthResponse.status}`);
+      //   }
+      //   await healthResponse.json();
+      // } catch (healthError) {
+      //   if (healthError instanceof Error && healthError.name === 'AbortError') {
+      //     throw new Error("Health check timed out after 2 seconds");
+      //   }
+      //   throw new Error("Health check failed. Server might be unavailable.");
+      // }
   
-      // Extract the filename from the processedSTL URL
-      const stlFilename = processedSTL ? processedSTL.split('/').pop() : null;
+      // // Extract the filename from the processedSTL URL
+      // const stlFilename = processedSTL ? processedSTL.split('/').pop() : null;
   
-      // Proceed with MASV upload
-      const formData = new FormData();
-      if (stlFilename) {
-        formData.append('file_name', stlFilename);
-      }
+      // // Proceed with MASV upload
+      // const formData = new FormData();
+      // if (stlFilename) {
+      //   formData.append('file_name', stlFilename);
+      // }
 
-      const response = await fetch('http://localhost:8004/upload_to_masv', {
-        method: 'POST',
-        body: formData,
-      });
+      // const response = await fetch('http://localhost:8004/upload_to_masv', {
+      //   method: 'POST',
+      //   body: formData,
+      // });
 
-      if (!response.ok) {
-        throw new Error(`Failed to upload to MASV. Server responded with status: ${response.status}`);
-      }
+      // if (!response.ok) {
+      //   throw new Error(`Failed to upload to MASV. Server responded with status: ${response.status}`);
+      // }
 
-      const data = await response.json();
-      console.log('MASV upload successful. Package ID:', data.masv_package_id);
+      // const data = await response.json();
+      // console.log('MASV upload successful. Package ID:', data.masv_package_id);
 
-      // Award RBC points
-      const rbcResponse = await fetch('http://localhost:8004/award_rbc_points?member_id=42&points=10', {
-        method: 'POST',
-      });
+      // // Award RBC points
+      // const rbcResponse = await fetch('http://localhost:8004/award_rbc_points?member_id=42&points=10', {
+      //   method: 'POST',
+      // });
 
-      if (!rbcResponse.ok) {
-        throw new Error(`Failed to award RBC points. Server responded with status: ${rbcResponse.status}`);
-      }
+      // if (!rbcResponse.ok) {
+      //   throw new Error(`Failed to award RBC points. Server responded with status: ${rbcResponse.status}`);
+      // }
 
-      const rbcData = await rbcResponse.json();
-      console.log('RBC points awarded:', rbcData);
+      // const rbcData = await rbcResponse.json();
+      // console.log('RBC points awarded:', rbcData);
 
+      await new Promise(resolve => setTimeout(resolve, 2000));
       setShowConfetti(true);
       setShowDialog(true);
     } catch (err) {
@@ -285,41 +286,43 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     try {
-      // First, refine the prompt using the /chat endpoint
-      const chatResponse = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: generatePrompt }),
-      });
+      // // First, refine the prompt using the /chat endpoint
+      // const chatResponse = await fetch('/api/chat', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ prompt: generatePrompt }),
+      // });
   
-      if (!chatResponse.ok) {
-        throw new Error('Failed to refine prompt. Please try again.');
-      }
+      // if (!chatResponse.ok) {
+      //   throw new Error('Failed to refine prompt. Please try again.');
+      // }
   
-      const chatData = await chatResponse.json();
-      const refinedPrompt = chatData.refinedPrompt;
+      // const chatData = await chatResponse.json();
+      // const refinedPrompt = chatData.refinedPrompt;
   
-      // Now use the refined prompt to generate the image
-      const response = await fetch('/api/generate_image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: refinedPrompt }),
-      });
+      // // Now use the refined prompt to generate the image
+      // const response = await fetch('/api/generate_image', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ prompt: refinedPrompt }),
+      // });
   
-      if (!response.ok) {
-        throw new Error('Failed to generate image. Please try again.');
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to generate image. Please try again.');
+      // }
   
-      const data = await response.json();
-      if (data.image_url) {
-        setGeneratedImage(data.image_url);
-      } else {
-        throw new Error("No image URL received. Please try again.");
-      }
+      // const data = await response.json();
+      // if (data.image_url) {
+      //   setGeneratedImage(data.image_url);
+      // } else {
+      //   throw new Error("No image URL received. Please try again.");
+      // }
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setGeneratedImage('/braids.webp');
     } catch (err) {
       console.error("Error generating image:", err);
       setError("Failed to generate image. Please try again.");

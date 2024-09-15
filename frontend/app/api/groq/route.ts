@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: input },
       ],
-      model: "llama3-70b-8192",
+      model: "llama3-8b-8192",
     });
 
     console.log('Groq API response:', chatCompletion);
